@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region"
   type        = string
-  default     = "us-west-2"
+  default     = "us-east-2"
 }
 
 variable "project_name" {
@@ -37,7 +37,7 @@ variable "private_subnet_cidrs" {
 variable "kubernetes_version" {
   description = "Kubernetes version"
   type        = string
-  default     = "1.28"
+  default     = "1.33"
 }
 
 variable "node_instance_types" {
