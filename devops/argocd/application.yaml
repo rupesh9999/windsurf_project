@@ -1,0 +1,92 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-platform
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-org/ecommerce-platform.git
+    targetRevision: main
+    path: infrastructure/k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+    - CreateNamespace=true
+    - PrunePropagationPolicy=foreground
+    - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  revisionHistoryLimit: 10
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ecommerce
+  namespace: argocd
+spec:
+  description: E-Commerce Platform Project
+  sourceRepos:
+  - 'https://github.com/your-org/ecommerce-platform.git'
+  destinations:
+  - namespace: ecommerce
+    server: https://kubernetes.default.svc
+  - namespace: istio-system
+    server: https://kubernetes.default.svc
+  - namespace: monitoring
+    server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+  - group: rbac.authorization.k8s.io
+    kind: ClusterRole
+  - group: rbac.authorization.k8s.io
+    kind: ClusterRoleBinding
+  namespaceResourceWhitelist:
+  - group: ''
+    kind: ConfigMap
+  - group: ''
+    kind: Secret
+  - group: ''
+    kind: Service
+  - group: ''
+    kind: ServiceAccount
+  - group: apps
+    kind: Deployment
+  - group: apps
+    kind: ReplicaSet
+  - group: networking.k8s.io
+    kind: Ingress
+  - group: networking.k8s.io
+    kind: NetworkPolicy
+  - group: policy
+    kind: PodDisruptionBudget
+  - group: autoscaling
+    kind: HorizontalPodAutoscaler
+  roles:
+  - name: admin
+    description: Admin access to ecommerce project
+    policies:
+    - p, proj:ecommerce:admin, applications, *, ecommerce/*, allow
+    - p, proj:ecommerce:admin, repositories, *, *, allow
+    groups:
+    - ecommerce-admins
+  - name: developer
+    description: Developer access to ecommerce project
+    policies:
+    - p, proj:ecommerce:developer, applications, get, ecommerce/*, allow
+    - p, proj:ecommerce:developer, applications, sync, ecommerce/*, allow
+    groups:
+    - ecommerce-developers
