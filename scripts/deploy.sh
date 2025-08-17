@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 AWS_REGION=${AWS_REGION:-us-west-2}
 CLUSTER_NAME=${CLUSTER_NAME:-ecommerce-cluster}
 NAMESPACE=${NAMESPACE:-ecommerce}
-DOCKER_REGISTRY=${DOCKER_REGISTRY:-your-registry.com}
+DOCKER_REGISTRY=${DOCKER_REGISTRY:-051826731262.dkr.ecr.us-east-2.amazonaws.com/ecommerce-app}
 
 # Functions
 log_info() {
