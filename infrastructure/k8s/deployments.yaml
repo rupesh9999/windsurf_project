@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: user-service
-        image: ecommerce/user-service:latest
+        image: ecommerce-app/user-service:latest
         ports:
         - containerPort: 3001
         envFrom:
@@ -68,7 +68,7 @@ spec:
     spec:
       containers:
       - name: product-service
-        image: ecommerce/product-service:latest
+        image: ecommerce-app/product-service:latest
         ports:
         - containerPort: 3002
         envFrom:
@@ -118,7 +118,7 @@ spec:
     spec:
       containers:
       - name: order-service
-        image: ecommerce/order-service:latest
+        image: ecommerce-app/order-service:latest
         ports:
         - containerPort: 3003
         envFrom:
@@ -166,7 +166,7 @@ spec:
     spec:
       containers:
       - name: payment-service
-        image: ecommerce/payment-service:latest
+        image: ecommerce-app/payment-service:latest
         ports:
         - containerPort: 3004
         envFrom:
@@ -216,7 +216,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ecommerce/frontend:latest
+        image: ecommerce-app/frontend:latest
         ports:
         - containerPort: 80
         resources:
