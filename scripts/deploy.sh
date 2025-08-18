@@ -151,14 +151,14 @@ build_and_push_images() {
     
     # Build frontend
     log_info "Building frontend image..."
-    docker build -t $DOCKER_REGISTRY/ecommerce-app/frontend:$BUILD_TAG frontend/
-    docker push $DOCKER_REGISTRY/ecommerce-app/frontend:$BUILD_TAG
+    docker build -t $DOCKER_REGISTRY/frontend:$BUILD_TAG frontend/
+    docker push $DOCKER_REGISTRY/frontend:$BUILD_TAG
     
     # Build services
     for service in user-service product-service order-service payment-service; do
         log_info "Building $service image..."
-        docker build -t $DOCKER_REGISTRY/ecommerce-app/$service:$BUILD_TAG services/$service/
-        docker push $DOCKER_REGISTRY/ecommerce-app/$service:$BUILD_TAG
+        docker build -t $DOCKER_REGISTRY/$service:$BUILD_TAG services/$service/
+        docker push $DOCKER_REGISTRY/$service:$BUILD_TAG
     done
     
     log_info "All images built and pushed successfully!"
