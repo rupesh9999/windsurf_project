@@ -280,8 +280,8 @@ router.post('/refresh', async (req, res, next) => {
     // Generate new access token
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
+      config.jwt.secret as string,
+      { expiresIn: config.jwt.expiresIn as string }
     );
 
     res.json({ token });

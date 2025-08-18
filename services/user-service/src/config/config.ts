@@ -28,6 +28,11 @@ export const config = {
     expiresIn: process.env.JWT_EXPIRES_IN || '24h',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+  } as {
+    secret: string;
+    expiresIn: string;
+    refreshSecret: string;
+    refreshExpiresIn: string;
   },
   
   // External services
