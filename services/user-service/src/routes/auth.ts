@@ -79,20 +79,23 @@ router.post('/register', async (req, res, next) => {
       firstName,
       lastName,
       phone,
+      role: 'customer',
+      isActive: true,
+      emailVerified: false,
     });
 
     // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
+      config.jwt.secret as string,
+      { expiresIn: config.jwt.expiresIn as string }
     );
 
     // Generate refresh token
     const refreshToken = jwt.sign(
       { userId: user.id },
-      config.jwt.refreshSecret,
-      { expiresIn: config.jwt.refreshExpiresIn }
+      config.jwt.refreshSecret as string,
+      { expiresIn: config.jwt.refreshExpiresIn as string }
     );
 
     // Store refresh token in Redis
@@ -159,15 +162,15 @@ router.post('/login', async (req, res, next) => {
     // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
+      config.jwt.secret as string,
+      { expiresIn: config.jwt.expiresIn as string }
     );
 
     // Generate refresh token
     const refreshToken = jwt.sign(
       { userId: user.id },
-      config.jwt.refreshSecret,
-      { expiresIn: config.jwt.refreshExpiresIn }
+      config.jwt.refreshSecret as string,
+      { expiresIn: config.jwt.refreshExpiresIn as string }
     );
 
     // Store refresh token in Redis
