@@ -16,7 +16,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "ecommerce-terraform-state"
+    bucket = "ecommerce1-terraform-state"
     key    = "infrastructure/terraform.tfstate"
     region = "us-east-2"
   }
