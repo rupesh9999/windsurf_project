@@ -9,7 +9,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-AWS_REGION=${AWS_REGION:-us-west-2}
+AWS_REGION=${AWS_REGION:-us-east-2}
 CLUSTER_NAME=${CLUSTER_NAME:-ecommerce-cluster}
 NAMESPACE=${NAMESPACE:-ecommerce}
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-051826731262.dkr.ecr.us-east-2.amazonaws.com/ecommerce-app}
