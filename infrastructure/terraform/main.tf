@@ -378,8 +378,8 @@ resource "aws_db_instance" "main" {
   backup_window          = "03:00-04:00"
   maintenance_window     = "sun:04:00-sun:05:00"
 
-  skip_final_snapshot = var.environment != "production"
-  deletion_protection = var.environment == "production"
+  skip_final_snapshot       = true
+  deletion_protection       = false
 
   tags = {
     Name        = "${var.project_name}-database"
