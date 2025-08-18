@@ -266,14 +266,12 @@ resource "aws_s3_bucket_versioning" "product_images" {
   }
 }
 
-resource "aws_s3_bucket_encryption" "product_images" {
+resource "aws_s3_bucket_server_side_encryption_configuration" "product_images" {
   bucket = aws_s3_bucket.product_images.id
 
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
     }
   }
 }
@@ -305,7 +303,6 @@ resource "aws_eks_cluster" "main" {
 
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_policy,
-    aws_iam_role_policy_attachment.eks_service_policy,
   ]
 
   tags = {
