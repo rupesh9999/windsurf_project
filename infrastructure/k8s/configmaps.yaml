@@ -6,9 +6,9 @@ metadata:
 data:
   NODE_ENV: "production"
   PORT: "3001"
-  DB_HOST: "mysql-users"
+  DB_HOST: "ecommerce-database.cluster-xxxxx.us-east-2.rds.amazonaws.com"
   DB_PORT: "3306"
-  DB_NAME: "ecommerce_users"
+  DB_NAME: "ecommerce"
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"
 ---
@@ -20,13 +20,13 @@ metadata:
 data:
   NODE_ENV: "production"
   PORT: "3002"
-  DB_HOST: "mysql-products"
+  DB_HOST: "ecommerce-database.cluster-xxxxx.us-east-2.rds.amazonaws.com"
   DB_PORT: "3306"
-  DB_NAME: "ecommerce_products"
+  DB_NAME: "ecommerce"
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"
-  AWS_REGION: "us-west-2"
-  S3_BUCKET: "ecommerce-product-images"
+  AWS_REGION: "us-east-2"
+  S3_BUCKET: "ecommerce-product-images-xxxxx"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -36,9 +36,9 @@ metadata:
 data:
   NODE_ENV: "production"
   PORT: "3003"
-  DB_HOST: "mysql-orders"
+  DB_HOST: "ecommerce-database.cluster-xxxxx.us-east-2.rds.amazonaws.com"
   DB_PORT: "3306"
-  DB_NAME: "ecommerce_orders"
+  DB_NAME: "ecommerce"
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"
   USER_SERVICE_URL: "http://user-service:3001"
@@ -53,8 +53,8 @@ metadata:
 data:
   NODE_ENV: "production"
   PORT: "3004"
-  DB_HOST: "mysql-payments"
+  DB_HOST: "ecommerce-database.cluster-xxxxx.us-east-2.rds.amazonaws.com"
   DB_PORT: "3306"
-  DB_NAME: "ecommerce_payments"
+  DB_NAME: "ecommerce"
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"

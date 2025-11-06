@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: user-service
-        image: 051826731262.dkr.ecr.us-east-2.amazonaws.com/ecommerce-app/user-service:latest
+        image: ECR_USER_SERVICE_REPOSITORY_URL:latest
         ports:
         - containerPort: 3001
         envFrom:
@@ -68,7 +68,7 @@ spec:
     spec:
       containers:
       - name: product-service
-        image: 051826731262.dkr.ecr.us-east-2.amazonaws.com/ecommerce-app/product-service:latest
+        image: ECR_PRODUCT_SERVICE_REPOSITORY_URL:latest
         ports:
         - containerPort: 3002
         envFrom:
@@ -118,7 +118,7 @@ spec:
     spec:
       containers:
       - name: order-service
-        image: 051826731262.dkr.ecr.us-east-2.amazonaws.com/ecommerce-app/order-service:latest
+        image: ECR_ORDER_SERVICE_REPOSITORY_URL:latest
         ports:
         - containerPort: 3003
         envFrom:
@@ -166,7 +166,7 @@ spec:
     spec:
       containers:
       - name: payment-service
-        image: 051826731262.dkr.ecr.us-east-2.amazonaws.com/ecommerce-app/payment-service:latest
+        image: ECR_PAYMENT_SERVICE_REPOSITORY_URL:latest
         ports:
         - containerPort: 3004
         envFrom:
@@ -216,7 +216,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: 051826731262.dkr.ecr.us-east-2.amazonaws.com/ecommerce-app/frontend:latest
+        image: ECR_FRONTEND_REPOSITORY_URL:latest
         ports:
         - containerPort: 80
         resources:

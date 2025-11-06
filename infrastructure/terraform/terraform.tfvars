@@ -1,1 +1,1 @@
-rds_password = "your-secure-password-here"
+rds_password = "SecurePass123!"

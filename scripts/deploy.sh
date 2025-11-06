@@ -58,6 +58,14 @@ deploy_infrastructure() {
     
     # Get outputs
     CLUSTER_ENDPOINT=$(terraform output -raw eks_cluster_endpoint)
+    ECR_FRONTEND_URL=$(terraform output -raw ecr_frontend_repository_url)
+    ECR_USER_SERVICE_URL=$(terraform output -raw ecr_user_service_repository_url)
+    ECR_PRODUCT_SERVICE_URL=$(terraform output -raw ecr_product_service_repository_url)
+    ECR_ORDER_SERVICE_URL=$(terraform output -raw ecr_order_service_repository_url)
+    ECR_PAYMENT_SERVICE_URL=$(terraform output -raw ecr_payment_service_repository_url)
+    RDS_ENDPOINT=$(terraform output -raw rds_endpoint)
+    S3_BUCKET_NAME=$(terraform output -raw s3_bucket_name)
+    ALB_CONTROLLER_ROLE_ARN=$(terraform output -raw aws_load_balancer_controller_role_arn)
     
     cd ../..
     
@@ -149,17 +157,40 @@ build_and_push_images() {
     # Get build tag
     BUILD_TAG=$(git rev-parse --short HEAD)
     
-    # Build frontend
-    log_info "Building frontend image..."
-    docker build -t $DOCKER_REGISTRY/frontend:$BUILD_TAG frontend/
-    docker push $DOCKER_REGISTRY/frontend:$BUILD_TAG
+    # Login to ECR
+    aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $(echo $ECR_FRONTEND_URL | cut -d'/' -f1)
     
-    # Build services
-    for service in user-service product-service order-service payment-service; do
-        log_info "Building $service image..."
-        docker build -t $DOCKER_REGISTRY/$service:$BUILD_TAG services/$service/
-        docker push $DOCKER_REGISTRY/$service:$BUILD_TAG
-    done
+    # Build and push frontend
+    log_info "Building frontend image..."
+    docker build -t $ECR_FRONTEND_URL:$BUILD_TAG frontend/
+    docker push $ECR_FRONTEND_URL:$BUILD_TAG
+    docker tag $ECR_FRONTEND_URL:$BUILD_TAG $ECR_FRONTEND_URL:latest
+    docker push $ECR_FRONTEND_URL:latest
+    
+    # Build and push services
+    log_info "Building user-service image..."
+    docker build -t $ECR_USER_SERVICE_URL:$BUILD_TAG services/user-service/
+    docker push $ECR_USER_SERVICE_URL:$BUILD_TAG
+    docker tag $ECR_USER_SERVICE_URL:$BUILD_TAG $ECR_USER_SERVICE_URL:latest
+    docker push $ECR_USER_SERVICE_URL:latest
+    
+    log_info "Building product-service image..."
+    docker build -t $ECR_PRODUCT_SERVICE_URL:$BUILD_TAG services/product-service/
+    docker push $ECR_PRODUCT_SERVICE_URL:$BUILD_TAG
+    docker tag $ECR_PRODUCT_SERVICE_URL:$BUILD_TAG $ECR_PRODUCT_SERVICE_URL:latest
+    docker push $ECR_PRODUCT_SERVICE_URL:latest
+    
+    log_info "Building order-service image..."
+    docker build -t $ECR_ORDER_SERVICE_URL:$BUILD_TAG services/order-service/
+    docker push $ECR_ORDER_SERVICE_URL:$BUILD_TAG
+    docker tag $ECR_ORDER_SERVICE_URL:$BUILD_TAG $ECR_ORDER_SERVICE_URL:latest
+    docker push $ECR_ORDER_SERVICE_URL:latest
+    
+    log_info "Building payment-service image..."
+    docker build -t $ECR_PAYMENT_SERVICE_URL:$BUILD_TAG services/payment-service/
+    docker push $ECR_PAYMENT_SERVICE_URL:$BUILD_TAG
+    docker tag $ECR_PAYMENT_SERVICE_URL:$BUILD_TAG $ECR_PAYMENT_SERVICE_URL:latest
+    docker push $ECR_PAYMENT_SERVICE_URL:latest
     
     log_info "All images built and pushed successfully!"
 }
@@ -169,6 +200,22 @@ deploy_application() {
     
     # Create namespace
     kubectl apply -f infrastructure/k8s/namespace.yaml
+    
+    # Deploy AWS Load Balancer Controller
+    sed -i "s|AWS_LOAD_BALANCER_CONTROLLER_ROLE_ARN|$ALB_CONTROLLER_ROLE_ARN|g" infrastructure/k8s/aws-load-balancer-controller.yaml
+    kubectl apply -f infrastructure/k8s/aws-load-balancer-controller.yaml
+    
+    # Deploy NGINX Ingress Controller
+    kubectl apply -f infrastructure/k8s/nginx-ingress-controller.yaml
+    
+    # Replace placeholders in configmaps and deployments
+    sed -i "s|ecommerce-database.cluster-xxxxx.us-east-2.rds.amazonaws.com|$RDS_ENDPOINT|g" infrastructure/k8s/configmaps.yaml
+    sed -i "s|ecommerce-product-images-xxxxx|$S3_BUCKET_NAME|g" infrastructure/k8s/configmaps.yaml
+    sed -i "s|ECR_FRONTEND_REPOSITORY_URL|$ECR_FRONTEND_URL|g" infrastructure/k8s/deployments.yaml
+    sed -i "s|ECR_USER_SERVICE_REPOSITORY_URL|$ECR_USER_SERVICE_URL|g" infrastructure/k8s/deployments.yaml
+    sed -i "s|ECR_PRODUCT_SERVICE_REPOSITORY_URL|$ECR_PRODUCT_SERVICE_URL|g" infrastructure/k8s/deployments.yaml
+    sed -i "s|ECR_ORDER_SERVICE_REPOSITORY_URL|$ECR_ORDER_SERVICE_URL|g" infrastructure/k8s/deployments.yaml
+    sed -i "s|ECR_PAYMENT_SERVICE_REPOSITORY_URL|$ECR_PAYMENT_SERVICE_URL|g" infrastructure/k8s/deployments.yaml
     
     # Apply configurations
     kubectl apply -f infrastructure/k8s/configmaps.yaml
@@ -202,26 +249,38 @@ wait_for_deployment() {
 get_service_urls() {
     log_info "Getting service URLs..."
     
-    # Get ingress IP
-    INGRESS_IP=$(kubectl get ingress ecommerce-ingress -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    # Wait for ingress to get an external IP
+    log_info "Waiting for ingress to be ready..."
+    sleep 30
     
-    if [ -z "$INGRESS_IP" ]; then
-        INGRESS_IP=$(kubectl get ingress ecommerce-ingress -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+    # Get ingress IP or hostname
+    INGRESS_HOST=$(kubectl get ingress ecommerce-ingress -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+    if [ -z "$INGRESS_HOST" ]; then
+        INGRESS_HOST=$(kubectl get ingress ecommerce-ingress -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    fi
+    
+    if [ -z "$INGRESS_HOST" ]; then
+        INGRESS_HOST="localhost"
+        log_warn "Could not get ingress external IP/hostname, using localhost for reference"
     fi
     
     echo ""
     echo "========================================="
     echo "Deployment Complete!"
     echo "========================================="
-    echo "Frontend URL: https://$INGRESS_IP"
-    echo "API URL: https://$INGRESS_IP/api"
+    echo "Frontend URL: http://$INGRESS_HOST"
+    echo "API Base URL: http://$INGRESS_HOST/api"
     echo ""
-    echo "Grafana URL: http://$(kubectl get svc grafana -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):3000"
-    echo "Grafana Login: admin/admin123"
+    echo "Service Health Checks:"
+    echo "Frontend: http://$INGRESS_HOST/health.html"
+    echo "User Service: http://$INGRESS_HOST/api/auth/health (internal)"
+    echo "Product Service: http://$INGRESS_HOST/api/products/health (internal)"
+    echo "Order Service: http://$INGRESS_HOST/api/orders/health (internal)"
+    echo "Payment Service: http://$INGRESS_HOST/api/payments/health (internal)"
     echo ""
-    echo "To access services:"
+    echo "To check pod status:"
     echo "kubectl get pods -n $NAMESPACE"
-    echo "kubectl logs -f deployment/frontend -n $NAMESPACE"
+    echo "kubectl get ingress -n $NAMESPACE"
     echo "========================================="
 }
 

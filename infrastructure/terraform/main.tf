@@ -285,6 +285,77 @@ resource "aws_s3_bucket_public_access_block" "product_images" {
   restrict_public_buckets = true
 }
 
+# ECR Repositories
+resource "aws_ecr_repository" "frontend" {
+  name                 = "${var.project_name}/frontend"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    Name        = "${var.project_name}-frontend-repo"
+    Environment = var.environment
+  }
+}
+
+resource "aws_ecr_repository" "user_service" {
+  name                 = "${var.project_name}/user-service"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    Name        = "${var.project_name}-user-service-repo"
+    Environment = var.environment
+  }
+}
+
+resource "aws_ecr_repository" "product_service" {
+  name                 = "${var.project_name}/product-service"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    Name        = "${var.project_name}-product-service-repo"
+    Environment = var.environment
+  }
+}
+
+resource "aws_ecr_repository" "order_service" {
+  name                 = "${var.project_name}/order-service"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    Name        = "${var.project_name}-order-service-repo"
+    Environment = var.environment
+  }
+}
+
+resource "aws_ecr_repository" "payment_service" {
+  name                 = "${var.project_name}/payment-service"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    Name        = "${var.project_name}-payment-service-repo"
+    Environment = var.environment
+  }
+}
+
 # EKS Cluster
 resource "aws_eks_cluster" "main" {
   name     = "${var.project_name}-cluster"

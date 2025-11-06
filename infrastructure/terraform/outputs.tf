@@ -89,6 +89,31 @@ output "aws_load_balancer_controller_role_arn" {
   value       = aws_iam_role.aws_load_balancer_controller.arn
 }
 
+output "ecr_frontend_repository_url" {
+  description = "URL of the ECR repository for frontend"
+  value       = aws_ecr_repository.frontend.repository_url
+}
+
+output "ecr_user_service_repository_url" {
+  description = "URL of the ECR repository for user service"
+  value       = aws_ecr_repository.user_service.repository_url
+}
+
+output "ecr_product_service_repository_url" {
+  description = "URL of the ECR repository for product service"
+  value       = aws_ecr_repository.product_service.repository_url
+}
+
+output "ecr_order_service_repository_url" {
+  description = "URL of the ECR repository for order service"
+  value       = aws_ecr_repository.order_service.repository_url
+}
+
+output "ecr_payment_service_repository_url" {
+  description = "URL of the ECR repository for payment service"
+  value       = aws_ecr_repository.payment_service.repository_url
+}
+
 output "region" {
   description = "AWS region"
   value       = var.aws_region
