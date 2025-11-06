@@ -25,26 +25,14 @@ The platform consists of:
 
 ## Deployment Steps
 
-### 1. Clone and Setup
+### 1. Initial Setup - Local Backend
 
-```bash
-git clone <repository-url>
-cd windsurf_project
-```
-
-### 2. Configure AWS Region (Optional)
-
-Update the AWS region in `infrastructure/terraform/terraform.tfvars` if needed:
-```hcl
-aws_region = "us-east-2"  # or your preferred region
-```
-
-### 3. Deploy Infrastructure
+**Important**: The Terraform configuration starts with local backend to avoid the chicken-and-egg problem with S3 state storage. After initial deployment, you can switch to S3 backend.
 
 ```bash
 cd infrastructure/terraform
 
-# Initialize Terraform
+# Initialize with local backend (already done)
 terraform init
 
 # Review the plan
@@ -54,15 +42,16 @@ terraform plan
 terraform apply
 ```
 
-This will create:
-- VPC with public/private subnets
-- EKS cluster with node group
-- RDS MySQL database
-- S3 bucket for images
-- ECR repositories
-- Required IAM roles
+### 2. Optional: Switch to S3 Backend
 
-### 4. Configure kubectl
+After the initial deployment creates the S3 bucket, you can switch to S3 backend for better state management:
+
+1. Uncomment the S3 backend block in `main.tf`
+2. Comment out the local backend block
+3. Create the S3 bucket manually or through Terraform (you'll need to do this in a separate apply)
+4. Run `terraform init` again to migrate state to S3
+
+### 3. Configure kubectl
 
 ```bash
 # Update kubeconfig for the new cluster
@@ -150,10 +139,15 @@ The services connect to RDS using the endpoint from Terraform outputs.
 
 ### Common Issues
 
-1. **ECR Login Issues**: Ensure AWS credentials have ECR permissions
-2. **Load Balancer Not Ready**: Wait a few minutes for AWS to provision the load balancer
-3. **Database Connection**: Verify security groups allow traffic from EKS nodes to RDS
-4. **Image Pull Errors**: Check ECR repository permissions
+1. **S3 Backend Access Denied**: 
+   - **Error**: `operation error S3: HeadObject, https response error StatusCode: 403`
+   - **Cause**: Terraform backend configured for S3 but bucket doesn't exist yet
+   - **Solution**: Use local backend for initial deployment (already configured)
+
+2. **ECR Login Issues**: Ensure AWS credentials have ECR permissions
+3. **Load Balancer Not Ready**: Wait a few minutes for AWS to provision the load balancer
+4. **Database Connection**: Verify security groups allow traffic from EKS nodes to RDS
+5. **Image Pull Errors**: Check ECR repository permissions
 
 ## Security Considerations
 

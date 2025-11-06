@@ -1,4 +1,4 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, Model, Optional, Op } from 'sequelize';
 import sequelize from '../config/database';
 
 export enum PaymentStatus {
@@ -217,7 +217,7 @@ Payment.init(
         unique: true,
         where: {
           stripePaymentIntentId: {
-            [DataTypes.Op.ne]: null,
+            [Op.ne]: null,
           },
         },
       },

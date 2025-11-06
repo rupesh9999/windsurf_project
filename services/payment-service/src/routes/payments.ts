@@ -3,7 +3,7 @@ import { body, param, query, validationResult } from 'express-validator';
 import Stripe from 'stripe';
 import Payment, { PaymentStatus, PaymentMethod } from '../models/Payment';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
-import redis from '../config/redis';
+import { redisClient } from '../config/redis';
 import logger from '../utils/logger';
 import config from '../config/config';
 import axios from 'axios';
@@ -136,13 +136,14 @@ router.post('/create-intent', authenticateToken, createPaymentIntentValidation, 
       currency: currency.toUpperCase(),
       status: PaymentStatus.PENDING,
       paymentMethod,
+      refundedAmount: 0,
       metadata: {
         stripeClientSecret: paymentIntent.client_secret,
       },
     });
 
     // Cache payment for quick access
-    await redis.setex(`payment:${payment.id}`, 3600, JSON.stringify(payment.toJSON()));
+    await redisClient.setEx(`payment:${payment.id}`, 3600, JSON.stringify(payment.toJSON()));
 
     logger.info(`Payment intent created: ${paymentIntent.id} for order ${orderId}`);
 
@@ -225,19 +226,24 @@ router.post('/confirm', authenticateToken, confirmPaymentValidation, async (req:
     switch (paymentIntent.status) {
       case 'succeeded':
         newStatus = PaymentStatus.SUCCEEDED;
-        if (paymentIntent.charges.data[0]) {
-          const charge = paymentIntent.charges.data[0];
-          payment.stripeChargeId = charge.id;
-          
-          if (charge.payment_method_details?.card) {
-            paymentMethodDetails = {
-              card: {
-                brand: charge.payment_method_details.card.brand,
-                last4: charge.payment_method_details.card.last4,
-                expMonth: charge.payment_method_details.card.exp_month,
-                expYear: charge.payment_method_details.card.exp_year,
-              }
-            };
+        // Get charge details from latest_charge if available
+        if (paymentIntent.latest_charge) {
+          try {
+            const charge = await stripe.charges.retrieve(paymentIntent.latest_charge as string);
+            payment.stripeChargeId = charge.id;
+            
+            if (charge.payment_method_details?.card) {
+              paymentMethodDetails = {
+                card: {
+                  brand: charge.payment_method_details.card.brand,
+                  last4: charge.payment_method_details.card.last4,
+                  expMonth: charge.payment_method_details.card.exp_month,
+                  expYear: charge.payment_method_details.card.exp_year,
+                }
+              };
+            }
+          } catch (error) {
+            logger.warn('Failed to retrieve charge details:', error);
           }
         }
         break;
@@ -270,7 +276,7 @@ router.post('/confirm', authenticateToken, confirmPaymentValidation, async (req:
     }
 
     // Clear cache
-    await redis.del(`payment:${payment.id}`);
+    await redisClient.del(`payment:${payment.id}`);
 
     logger.info(`Payment confirmed: ${paymentIntentId} with status ${newStatus}`);
 
@@ -377,7 +383,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
     const userId = req.user!.userId;
 
     // Try cache first
-    const cached = await redis.get(`payment:${paymentId}`);
+    const cached = await redisClient.get(`payment:${paymentId}`);
     if (cached) {
       const payment = JSON.parse(cached);
       if (payment.userId === userId || req.user!.role === 'admin') {
@@ -397,7 +403,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
     }
 
     // Cache the result
-    await redis.setex(`payment:${paymentId}`, 3600, JSON.stringify(payment.toJSON()));
+    await redisClient.setEx(`payment:${paymentId}`, 3600, JSON.stringify(payment.toJSON()));
 
     res.json({ payment: payment.toJSON() });
   } catch (error) {
@@ -492,7 +498,7 @@ router.post('/:id/refund', authenticateToken, refundValidation, async (req: Requ
     }
 
     // Clear cache
-    await redis.del(`payment:${paymentId}`);
+    await redisClient.del(`payment:${paymentId}`);
 
     logger.info(`Refund processed: ${refund.id} for payment ${payment.id}, amount: $${refundAmount}`);
 

@@ -22,6 +22,12 @@ export const config = {
     password: process.env.REDIS_PASSWORD,
   },
   
+  // JWT
+  jwt: {
+    secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key',
+    expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+  },
+  
   // External services
   services: {
     userService: process.env.USER_SERVICE_URL || 'http://localhost:3001',

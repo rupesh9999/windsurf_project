@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import Payment, { PaymentStatus } from '../models/Payment';
 import config from '../config/config';
 import logger from '../utils/logger';
-import redis from '../config/redis';
+import { redisClient } from '../config/redis';
 import axios from 'axios';
 
 const router = Router();
@@ -111,19 +111,23 @@ const handlePaymentIntentSucceeded = async (paymentIntent: Stripe.PaymentIntent)
     payment.status = PaymentStatus.SUCCEEDED;
     
     // Get charge details
-    if (paymentIntent.charges.data[0]) {
-      const charge = paymentIntent.charges.data[0];
-      payment.stripeChargeId = charge.id;
-      
-      if (charge.payment_method_details?.card) {
-        payment.paymentMethodDetails = {
-          card: {
-            brand: charge.payment_method_details.card.brand,
-            last4: charge.payment_method_details.card.last4,
-            expMonth: charge.payment_method_details.card.exp_month,
-            expYear: charge.payment_method_details.card.exp_year,
-          }
-        };
+    if (paymentIntent.latest_charge) {
+      try {
+        const charge = await stripe.charges.retrieve(paymentIntent.latest_charge as string);
+        payment.stripeChargeId = charge.id;
+        
+        if (charge.payment_method_details?.card) {
+          payment.paymentMethodDetails = {
+            card: {
+              brand: charge.payment_method_details.card.brand || '',
+              last4: charge.payment_method_details.card.last4 || '',
+              expMonth: charge.payment_method_details.card.exp_month || 0,
+              expYear: charge.payment_method_details.card.exp_year || 0,
+            }
+          };
+        }
+      } catch (error) {
+        logger.warn('Failed to retrieve charge details:', error);
       }
     }
 
@@ -133,7 +137,7 @@ const handlePaymentIntentSucceeded = async (paymentIntent: Stripe.PaymentIntent)
     await updateOrderPaymentStatus(payment.orderId, 'paid');
 
     // Clear cache
-    await redis.del(`payment:${payment.id}`);
+    await redisClient.del(`payment:${payment.id}`);
 
     logger.info(`Payment succeeded: ${payment.id} for order ${payment.orderId}`);
   } catch (error) {
@@ -162,7 +166,7 @@ const handlePaymentIntentFailed = async (paymentIntent: Stripe.PaymentIntent) =>
     await updateOrderPaymentStatus(payment.orderId, 'failed');
 
     // Clear cache
-    await redis.del(`payment:${payment.id}`);
+    await redisClient.del(`payment:${payment.id}`);
 
     logger.info(`Payment failed: ${payment.id} for order ${payment.orderId}`);
   } catch (error) {
@@ -190,7 +194,7 @@ const handlePaymentIntentCanceled = async (paymentIntent: Stripe.PaymentIntent) 
     await updateOrderPaymentStatus(payment.orderId, 'failed');
 
     // Clear cache
-    await redis.del(`payment:${payment.id}`);
+    await redisClient.del(`payment:${payment.id}`);
 
     logger.info(`Payment canceled: ${payment.id} for order ${payment.orderId}`);
   } catch (error) {

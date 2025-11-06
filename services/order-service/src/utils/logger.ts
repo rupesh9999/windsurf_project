@@ -1,13 +1,15 @@
 import winston from 'winston';
-import config from '../config/config';
+import { config } from '../config/config';
 
-const logger = winston.createLogger({
+const logFormat = winston.format.combine(
+  winston.format.timestamp(),
+  winston.format.errors({ stack: true }),
+  winston.format.json()
+);
+
+export const logger = winston.createLogger({
   level: config.nodeEnv === 'production' ? 'info' : 'debug',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    winston.format.json()
-  ),
+  format: logFormat,
   defaultMeta: { service: 'order-service' },
   transports: [
     new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
@@ -23,5 +25,3 @@ if (config.nodeEnv !== 'production') {
     )
   }));
 }
-
-export default logger;

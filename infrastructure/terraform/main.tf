@@ -15,11 +15,16 @@ terraform {
     }
   }
 
-  backend "s3" {
-    bucket = "ecommerce1-terraform-state"
-    key    = "infrastructure/terraform.tfstate"
-    region = "us-east-2"
+  backend "local" {
+    path = "terraform.tfstate"
   }
+
+  # Uncomment below after initial deployment to use S3 backend
+  # backend "s3" {
+  #   bucket = "ecommerce1-terraform-state"
+  #   key    = "infrastructure/terraform.tfstate"
+  #   region = "us-east-2"
+  # }
 }
 
 provider "aws" {

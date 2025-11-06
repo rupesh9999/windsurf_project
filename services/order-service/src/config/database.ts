@@ -1,9 +1,9 @@
 import { Sequelize } from 'sequelize';
-import config from './config';
-import logger from '../utils/logger';
+import { config } from './config';
+import { logger } from '../utils/logger';
 
 const sequelize = new Sequelize(
-  config.database.name,
+  config.database.database,
   config.database.username,
   config.database.password,
   {

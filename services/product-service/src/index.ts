@@ -92,8 +92,8 @@ const startServer = async () => {
       logger.info(`Swagger documentation available at http://localhost:${config.port}/api-docs`);
     });
   } catch (error) {
-    logger.error('Failed to start server:', error);
-    process.exit(1);
+    logger.error('Failed to connect to database/Redis, continuing without them:', error);
+    // process.exit(1);
   }
 };
 

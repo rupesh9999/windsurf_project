@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import config from '../config/config';
-import redis from '../config/redis';
-import logger from '../utils/logger';
+import { config } from '../config/config';
+import { redisClient } from '../config/redis';
+import { logger } from '../utils/logger';
 
 interface JwtPayload {
   userId: number;
@@ -29,7 +29,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     }
 
     // Check if token is blacklisted
-    const isBlacklisted = await redis.get(`blacklist:${token}`);
+    const isBlacklisted = await redisClient.get(`blacklist:${token}`);
     if (isBlacklisted) {
       res.status(401).json({ error: 'Token is invalid' });
       return;

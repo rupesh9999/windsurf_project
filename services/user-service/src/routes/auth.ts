@@ -86,16 +86,16 @@ router.post('/register', async (req, res, next) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
+      { userId: user.id, email: user.email, role: user.role } as object,
       config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
+      { expiresIn: config.jwt.expiresIn } as jwt.SignOptions
     );
 
     // Generate refresh token
     const refreshToken = jwt.sign(
-      { userId: user.id },
+      { userId: user.id } as object,
       config.jwt.refreshSecret,
-      { expiresIn: config.jwt.refreshExpiresIn }
+      { expiresIn: config.jwt.refreshExpiresIn } as jwt.SignOptions
     );
 
     // Store refresh token in Redis
@@ -161,16 +161,16 @@ router.post('/login', async (req, res, next) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
+      { userId: user.id, email: user.email, role: user.role } as object,
       config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
+      { expiresIn: config.jwt.expiresIn } as jwt.SignOptions
     );
 
     // Generate refresh token
     const refreshToken = jwt.sign(
-      { userId: user.id },
+      { userId: user.id } as object,
       config.jwt.refreshSecret,
-      { expiresIn: config.jwt.refreshExpiresIn }
+      { expiresIn: config.jwt.refreshExpiresIn } as jwt.SignOptions
     );
 
     // Store refresh token in Redis
@@ -282,9 +282,9 @@ router.post('/refresh', async (req, res, next) => {
 
     // Generate new access token
     const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
+      { userId: user.id, email: user.email, role: user.role } as object,
       config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
+      { expiresIn: config.jwt.expiresIn } as jwt.SignOptions
     );
 
     res.json({ token });

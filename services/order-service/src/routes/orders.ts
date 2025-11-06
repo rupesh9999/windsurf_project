@@ -3,10 +3,10 @@ import { body, param, query, validationResult } from 'express-validator';
 import Order, { OrderStatus, PaymentStatus } from '../models/Order';
 import OrderItem from '../models/OrderItem';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
-import redis from '../config/redis';
-import logger from '../utils/logger';
+import { redisClient } from '../config/redis';
+import { logger } from '../utils/logger';
 import axios from 'axios';
-import config from '../config/config';
+import { config } from '../config/config';
 
 const router = Router();
 
@@ -199,7 +199,7 @@ router.post('/', authenticateToken, createOrderValidation, async (req: Request, 
     );
 
     // Cache order for quick access
-    await redis.setex(`order:${order.id}`, 3600, JSON.stringify({
+    await redisClient.setEx(`order:${order.id}`, 3600, JSON.stringify({
       ...order.toJSON(),
       items: orderItems.map(item => item.toJSON()),
     }));
@@ -321,7 +321,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
     const userId = req.user!.userId;
 
     // Try cache first
-    const cached = await redis.get(`order:${orderId}`);
+    const cached = await redisClient.get(`order:${orderId}`);
     if (cached) {
       const order = JSON.parse(cached);
       if (order.userId === userId || req.user!.role === 'admin') {
@@ -347,7 +347,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
     }
 
     // Cache the result
-    await redis.setex(`order:${orderId}`, 3600, JSON.stringify(order.toJSON()));
+    await redisClient.setEx(`order:${orderId}`, 3600, JSON.stringify(order.toJSON()));
 
     res.json({ order: order.toJSON() });
   } catch (error) {
@@ -432,7 +432,7 @@ router.put('/:id', authenticateToken, updateOrderValidation, async (req: Request
     await order.save();
 
     // Clear cache
-    await redis.del(`order:${orderId}`);
+    await redisClient.del(`order:${orderId}`);
 
     logger.info(`Order ${order.orderNumber} updated by user ${userId}`);
 
@@ -491,7 +491,7 @@ router.post('/:id/cancel', authenticateToken, async (req: Request, res: Response
     await order.updateStatus(OrderStatus.CANCELLED);
 
     // Clear cache
-    await redis.del(`order:${orderId}`);
+    await redisClient.del(`order:${orderId}`);
 
     // TODO: Process refund if payment was made
     // TODO: Release reserved inventory

@@ -88,15 +88,16 @@ const startServer = async () => {
     // Connect to Redis
     await connectRedis();
     logger.info('Redis connected successfully');
-  } catch (error) {
-    logger.error('Failed to connect to database/Redis, continuing without them:', error);
-  }
 
-  // Start server regardless of database connection status
-  app.listen(config.port, () => {
-    logger.info(`User service running on port ${config.port}`);
-    logger.info(`Swagger documentation available at http://localhost:${config.port}/api-docs`);
-  });
+    // Start server
+    app.listen(config.port, () => {
+      logger.info(`User service running on port ${config.port}`);
+      logger.info(`Swagger documentation available at http://localhost:${config.port}/api-docs`);
+    });
+  } catch (error) {
+    logger.error('Failed to start server:', error);
+    process.exit(1);
+  }
 };
 
 startServer();

@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 AWS_REGION=${AWS_REGION:-us-east-2}
 CLUSTER_NAME=${CLUSTER_NAME:-ecommerce-cluster}
 NAMESPACE=${NAMESPACE:-ecommerce}
-DOCKER_REGISTRY=${DOCKER_REGISTRY:-051826731262.dkr.ecr.us-east-2.amazonaws.com/ecommerce-app}
+DOCKER_REGISTRY=${DOCKER_REGISTRY:-863394984731.dkr.ecr.us-east-2.amazonaws.com/ecommerce-app}
 
 # Functions
 log_info() {
@@ -158,7 +158,9 @@ build_and_push_images() {
     BUILD_TAG=$(git rev-parse --short HEAD)
     
     # Login to ECR
-    aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $(echo $ECR_FRONTEND_URL | cut -d'/' -f1)
+    ECR_REGISTRY=$(echo $ECR_FRONTEND_URL | cut -d'/' -f1)
+    log_info "Logging in to ECR registry: $ECR_REGISTRY"
+    aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
     
     # Build and push frontend
     log_info "Building frontend image..."
@@ -288,6 +290,10 @@ get_service_urls() {
 main() {
     log_info "Starting E-Commerce Platform deployment..."
     
+    # Change to project root directory
+    SCRIPT_DIR=$(dirname $0)
+    cd $SCRIPT_DIR/..
+    
     case "${1:-all}" in
         "infra")
             check_prerequisites
@@ -295,6 +301,18 @@ main() {
             configure_kubectl
             ;;
         "app")
+            # Get terraform outputs first
+            cd infrastructure/terraform
+            ECR_FRONTEND_URL=$(terraform output -raw ecr_frontend_repository_url)
+            ECR_USER_SERVICE_URL=$(terraform output -raw ecr_user_service_repository_url)
+            ECR_PRODUCT_SERVICE_URL=$(terraform output -raw ecr_product_service_repository_url)
+            ECR_ORDER_SERVICE_URL=$(terraform output -raw ecr_order_service_repository_url)
+            ECR_PAYMENT_SERVICE_URL=$(terraform output -raw ecr_payment_service_repository_url)
+            RDS_ENDPOINT=$(terraform output -raw rds_endpoint)
+            S3_BUCKET_NAME=$(terraform output -raw s3_bucket_name)
+            ALB_CONTROLLER_ROLE_ARN=$(terraform output -raw aws_load_balancer_controller_role_arn)
+            cd ../..
+            
             build_and_push_images
             deploy_application
             wait_for_deployment

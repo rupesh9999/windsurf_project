@@ -1,29 +1,32 @@
-import Redis from 'ioredis';
+import { createClient } from 'redis';
 import config from './config';
 import logger from '../utils/logger';
 
-const redis = new Redis({
-  host: config.redis.host,
-  port: config.redis.port,
-  retryDelayOnFailover: 100,
-  enableReadyCheck: false,
-  maxRetriesPerRequest: null,
+export const redisClient = createClient({
+  socket: {
+    host: config.redis.host,
+    port: config.redis.port,
+  },
 });
 
-redis.on('connect', () => {
-  logger.info('Connected to Redis');
+redisClient.on('error', (err: any) => {
+  logger.error('Redis Client Error:', err);
 });
 
-redis.on('error', (error) => {
-  logger.error('Redis connection error:', error);
+redisClient.on('connect', () => {
+  logger.info('Redis client connected');
 });
 
-redis.on('ready', () => {
-  logger.info('Redis is ready');
+redisClient.on('ready', () => {
+  logger.info('Redis client ready');
 });
 
-redis.on('close', () => {
-  logger.warn('Redis connection closed');
-});
-
-export default redis;
+export const connectRedis = async (): Promise<void> => {
+  try {
+    await redisClient.connect();
+    logger.info('Redis connection established successfully');
+  } catch (error) {
+    logger.error('Unable to connect to Redis:', error);
+    throw error;
+  }
+};
